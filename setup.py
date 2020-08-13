@@ -8,7 +8,7 @@ setup(
   description = 'a low code library for content recommenders',   # Give a short description about your library
   author = 'Vagif Aliyev',                   # Type in your name
   author_email = 'vagal2003@gmail.com',      # Type in your E-Mail
-  url = 'https://github.com/Vagif12/coconut',   # Provide either the link to your github or to your website
+  url = 'https://github.com/Vagif12/cordial',   # Provide either the link to your github or to your website
   keywords = ['machine learning', 'recommender systems', 'automation'],   # Keywords that define your package best
   install_requires=[            # I get to this in a second
           'pandas',
