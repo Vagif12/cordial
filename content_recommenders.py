@@ -9,18 +9,19 @@ import math
 
 # Cleaning/ preprocessing function for content based recommender engine
 # basically converts feature values to list and fills in any NaN values
-def preprocess(df,feature_names):
+def preprocess(df,feature_names,indexer):
     if feature_names == [] or feature_names == None:
         # Getting defaults if no feature names were passed
         options = ['id','_id','rating','_rating','score','_score','rated']
         feature_names = list(df.select_dtypes('object').columns)
         for i in options:
-            if i in feature_names:
+            if i in [x.lower() for x in feature_names]:
                 del feature_names[feature_names.index(i)]
     for f in feature_names:
-        df = df.copy()
-        df[f] = df[f].apply(lambda l: [] if pd.isna(l) else [i.strip() for i in l.split(",")])
-        df = df.fillna('')
+        if f.lower() not in ['description','overview','plot','summary','text',indexer]:
+            df = df.copy()
+            df[f] = df[f].apply(lambda l: [] if pd.isna(l) else [i.strip() for i in l.split(",")])
+            df = df.fillna('')
     return df,feature_names
 
 
@@ -56,12 +57,9 @@ class GraphRecommender:
 
     """
     def __init__(self,dataset,feature_names=[],text_feature=None,indexer='title',n_recommendations=10):
-        self.feature_names = feature_names
-        if feature_names == []:
-            self.df,self.feature_names = preprocess(pd.read_csv(dataset),feature_names)
-        else:
-            self.df,self.feature_names = preprocess(pd.read_csv(dataset),feature_names)
+        self.df,self.feature_names = preprocess(pd.read_csv(dataset),feature_names,indexer)
 
+        
         print('|- Preprocessing data... -|')
         self.text_feature = text_feature
         if text_feature == '' or text_feature == None:
@@ -84,7 +82,7 @@ class GraphRecommender:
     def recommend(self,root):
         # TFIDF
         text_content = self.df[self.text_feature]
-        print(type(text_content))
+        print(text_content)
         vector = TfidfVectorizer(max_df=0.4,         
                                      min_df=1,      
                                      stop_words='english', 
@@ -103,7 +101,7 @@ class GraphRecommender:
         terms = vector.get_feature_names()
         print('|- Getting Bag of Words.. -|')
 
-        request_transform = vector.transform(self.df[self.text_feature])
+        request_transform = vector.transform(text_content)
         self.df['cluster'] = kmeans.predict(request_transform) 
 
         # Find similiar indices        
