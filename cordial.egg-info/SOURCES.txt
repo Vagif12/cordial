@@ -1,0 +1,7 @@
+setup.py
+cordial/content_recommenders.py
+cordial.egg-info/PKG-INFO
+cordial.egg-info/SOURCES.txt
+cordial.egg-info/dependency_links.txt
+cordial.egg-info/requires.txt
+cordial.egg-info/top_level.txt
