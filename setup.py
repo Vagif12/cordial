@@ -3,7 +3,7 @@ from setuptools import setup
 setup(
   name = 'cordial',         
   packages = ['cordial'],   # Chose the same as "name"
-  version = '0.1',      # Start with a small number and increase it with every change you make
+  version = '0.21',      # Start with a small number and increase it with every change you make
   license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
   description = 'a low code library for content recommenders',   # Give a short description about your library
   author = 'Vagif Aliyev',                   # Type in your name

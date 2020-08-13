@@ -1,8 +1,8 @@
 Metadata-Version: 1.1
 Name: cordial
-Version: 0.1
+Version: 0.21
 Summary: a low code library for content recommenders
-Home-page: https://github.com/Vagif12/coconut
+Home-page: https://github.com/Vagif12/cordial
 Author: Vagif Aliyev
 Author-email: vagal2003@gmail.com
 License: MIT

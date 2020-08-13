@@ -7,9 +7,12 @@ import networkx as nx
 import math
 
 
-# Cleaning/ preprocessing function for content based recommender engine
+# Cleaning/ preprocessing function for graph based recommender engine
 # basically converts feature values to list and fills in any NaN values
 def preprocess(df,feature_names,indexer):
+
+
+    # check if feature names were passed in, if not automaticallt detect
     if feature_names == [] or feature_names == None:
         # Getting defaults if no feature names were passed
         options = ['id','_id','rating','_rating','score','_score','rated']
@@ -17,6 +20,8 @@ def preprocess(df,feature_names,indexer):
         for i in options:
             if i in [x.lower() for x in feature_names]:
                 del feature_names[feature_names.index(i)]
+
+    # convert elements to list and fill NaN values
     for f in feature_names:
         if f.lower() not in ['description','overview','plot','summary','text',indexer]:
             df = df.copy()
@@ -27,7 +32,7 @@ def preprocess(df,feature_names,indexer):
 
 
 class GraphRecommender:
-    """ Main function for the Graph Recommender """
+    """ Main class for the Graph Recommender """
     """
     Concretely, this returns the top n recommendations for the specified value based on given features.
     Parameters:
@@ -59,8 +64,8 @@ class GraphRecommender:
     def __init__(self,dataset,feature_names=[],text_feature=None,indexer='title',n_recommendations=10):
         self.df,self.feature_names = preprocess(pd.read_csv(dataset),feature_names,indexer)
 
-        
         print('|- Preprocessing data... -|')
+        # check if txt feature was passed in, if not then automatically detect
         self.text_feature = text_feature
         if text_feature == '' or text_feature == None:
             try:
@@ -74,15 +79,20 @@ class GraphRecommender:
             except:
                 print('|- Text Feature was not detected. Please provide one! -|')
 
-        # NetworkX Graph initialisation
+        # initialisations
         self.G = nx.Graph()
         self.indexer = indexer
         self.n_recommendations = n_recommendations
+
+        # check if feature names is a list, if not throw error
+        if not(isinstance(self.feature_names,list)):
+            print('|- Error: feature names must be a list!')
+            exit()
         
+    # main function
     def recommend(self,root):
         # TFIDF
         text_content = self.df[self.text_feature]
-        print(text_content)
         vector = TfidfVectorizer(max_df=0.4,         
                                      min_df=1,      
                                      stop_words='english', 
@@ -93,7 +103,7 @@ class GraphRecommender:
                                     )
         tfidf = vector.fit_transform(text_content)
 
-        # Mini-batch kmeans on tfidf
+        # Mini-batch kmeans on tfidf vectorized text content
         k = 200
         kmeans = MiniBatchKMeans(n_clusters = k)
         kmeans.fit(tfidf)
@@ -111,6 +121,8 @@ class GraphRecommender:
             return [index for index in related_docs_indices][0:top_n] 
 
         print('|- Getting cosine similarities.. -|')
+
+        # Add edges and nodes for each of the feature names
         for i, rowi in self.df.iterrows():
             self.G.add_node(rowi[self.indexer],label="ITEM")
             for f in self.feature_names:
@@ -125,6 +137,7 @@ class GraphRecommender:
             for element in indices:
                 self.G.add_edge(snode, self.df[self.indexer].loc[element], label="SIMILARITY")
 
+        # The actual recommendation code
         commons_dict = {}
         print('|- Getting Recommendations.. -|')
         for e in self.G.neighbors(root):
@@ -147,6 +160,7 @@ class GraphRecommender:
             items.append(key) 
             weight.append(w)
 
+        # Results are a DataFrame under the result key
         result = pd.DataFrame(data=np.array(weight),index=items).reset_index().sort_values(0,ascending=False)
         result.columns = ['Title','Similarity'] 
         output = result[:self.n_recommendations]  
@@ -160,10 +174,10 @@ class GraphRecommender:
         }
 
 
+####################################### END OF GRAPH RECOMMENDER ##############################################################
 
 
-
-# Cleaning/ preprocessing function for content based recommender engine
+# Cleaning/ preprocessing function for basic content based recommender engine
 # basically tokenizes all the feature examples
 def clean_data(x):
     if isinstance(x, list):
@@ -177,6 +191,7 @@ def clean_data(x):
 
 # Cosine similarity matrix creator
 def matrix_maker(data,indexer='title',feature_names=[]):
+    # check if feature names are of type list
     try:
         assert(isinstance(feature_names, list))
     except:
@@ -195,7 +210,6 @@ def matrix_maker(data,indexer='title',feature_names=[]):
 
     data = pd.read_csv(data)
     data = data.copy()
-    #data = data[['title']].apply(pd.Series.unique).join(data[feature_names])
     try:
         assert indexer in data.columns
     except:
