@@ -3,9 +3,9 @@ from setuptools import setup
 setup(
   name = 'cordial',         
   packages = ['cordial'],   # Chose the same as "name"
-  version = '0.21',      # Start with a small number and increase it with every change you make
+  version = '0.22',      # Start with a small number and increase it with every change you make
   license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
-  description = 'a low code library for content recommenders',   # Give a short description about your library
+  description = 'comprehensive recommender systems',   # Give a short description about your library
   author = 'Vagif Aliyev',                   # Type in your name
   author_email = 'vagal2003@gmail.com',      # Type in your E-Mail
   url = 'https://github.com/Vagif12/cordial',   # Provide either the link to your github or to your website

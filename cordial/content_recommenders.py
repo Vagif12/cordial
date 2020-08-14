@@ -277,7 +277,7 @@ class BasicRecommender:
         if feature_names == []:
             catnames = list(self.data1.select_dtypes('object').columns)
             for i in catnames:
-                if 'id' in i.lower():
+                if 'id' in i.lower() or 'rating' in i.lower():
                     v = catnames.index(i)
                     del catnames[v]
             self.feature_names = catnames[1:]
