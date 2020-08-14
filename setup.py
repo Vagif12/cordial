@@ -1,12 +1,17 @@
 from setuptools import setup
 
+with open("README.md", "r") as fh:
+    long_description = fh.read()
+
 setup(
   name = 'cordial',         
   packages = ['cordial'],   # Chose the same as "name"
-  version = '0.221',      # Start with a small number and increase it with every change you make
+  version = '0.222',      # Start with a small number and increase it with every change you make
   license='MIT',        # Chose a license from here: https://help.github.com/articles/licensing-a-repository
   description = 'comprehensive recommender systems',   # Give a short description about your library
   author = 'Vagif Aliyev',                   # Type in your name
+  long_description=long_description,
+  long_description_content_type="text/markdown",
   author_email = 'vagal2003@gmail.com',      # Type in your E-Mail
   url = 'https://github.com/Vagif12/cordial',   # Provide either the link to your github or to your website
   keywords = ['machine learning', 'recommender systems', 'automation'],   # Keywords that define your package best

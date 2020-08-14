@@ -48,13 +48,13 @@ class GraphRecommender:
 
     For a movie dataset with features incliding genre,actors,writers:
 
-    c.content_recommender_query(feature_names=['genre','actors','writer','director','country'],text_feature='plot')
-    recommendations = c.recommend('Toy Story')
+    recommender = GraphRecommender('disney',feature_names=['genre','actors','writer','director','country'],text_feature='plot')
+    recommendations = recommender.recommend('Toy Story')['result']
 
     Returns:
     a dictionary with the following keys:
 
-    recommendations: the generated recommendations
+    result: the generated recommendations
     n_recommendations: the number of recommendations made
     indexer: the indexer used
     text_feature: the text feature used
@@ -247,28 +247,30 @@ class BasicRecommender:
     '''
     ---------- Basic Content Recommender Class --------
     This is the base class for the basic content recommender. The constructor takes in 5 arguements:
-    data: the dataset to work on
-    feature_names = a list of the names of features you would like to use to get recommendations
-    by default this will be all the categorical columns
-    n_recommendations: the number of recommendations to return
-    indexer = the name of the columns you want to get recommendations from
-    by default this will be the first categorical columns(excluding the id)
-    Example:
-    newClient.content_recommender_query(feature_names=['genre','actors','writer','plot'],indexer='title')
-    Methods:
-    recommend: the recommendations function. Returns recommendations based on search term passed
-    parameters:
-    search_term: string of the item you want to get recommendations from
-    returns:
-    result: a pandas DataFrame of the top n recommendations
-    Example:
-    c = client('path to file')
-    c.content_recommender_query(feature_names=['genre','plot','director','actors','writer'])
-    recommendations = c.recommend('Coco')
-    _get_message: gets the results of the similarity and creates a Dataframe
-    of the resultd and their correlation.
-    '''
 
+    Parameters:
+
+    dataset: dataset name
+    feature_names: a list of features to be used to generate recommendations
+    search_name: the name of the item you are looking to get recommendations from
+    n_recommendations: number of recommendations(default=10)
+    indexer: the name of the feature you want to get recommendations from
+    text_feature: the feature that describes the item your are trying to recommend(description,plot,overview,etc)
+
+    Returns:
+    a dictionary with the following keys:
+
+    result: the generated recommendations
+    n_recommendations: the number of recommendations made
+    indexer: the indexer used
+    feature_names: the feature names used
+
+    Example:
+    from cordial.content_recommenders import BasicRecommender
+    recommender.BasicRecommender('disney',feature_names=['genre','actors','writer','plot'],indexer='title')
+    print(recommender.recommend('Coco')['result'])
+    
+'''
 
     def __init__(self, dataset,feature_names=[],indexer='',n_recommendations=10):
         # If feature names is blank, then it get all categorical objects,

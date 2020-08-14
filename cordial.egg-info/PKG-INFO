@@ -1,12 +1,41 @@
-Metadata-Version: 1.1
+Metadata-Version: 2.1
 Name: cordial
-Version: 0.221
+Version: 0.222
 Summary: comprehensive recommender systems
 Home-page: https://github.com/Vagif12/cordial
 Author: Vagif Aliyev
 Author-email: vagal2003@gmail.com
 License: MIT
-Description: UNKNOWN
+Description: # cordial
+        Coridal is an intuitive light-weight API that allows developers to seamlessly use different recommender systems for their needs. 
+        In just three lines of a code, one can built a powerful content recommender system. Currently, Coridal only provides content recommenders,
+        but collaborative filtering is coming soon!
+        
+        # Installation
+        `pip install cordial`
+        
+        # Example usage:
+        
+        ```python
+        
+        # An example with Cordial's BasicRecommender
+        from cordial.content_recommenders import GraphRecommender,BasicRecommender
+        recommender = BasicRecommender('disney')
+        print(recommender.recommend('Toy Story')['result'])
+        
+        # An example with Cordial's GraphRecommender
+        from cordial.content_recommenders import GraphRecommender,BasicRecommender
+        recommender = GraphRecommender('netflix')
+        print(recommender.recommend('Toy Story')['result'])
+        
+        # It's as simple as pie!
+        ```
+        
+        # Todo:
+         1. Add support for other documents besides CSV
+         2. Add collaborative filtering
+         3. Implement as a REST API
+        
 Keywords: machine learning,recommender systems,automation
 Platform: UNKNOWN
 Classifier: Development Status :: 3 - Alpha
@@ -17,3 +46,4 @@ Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3.4
 Classifier: Programming Language :: Python :: 3.5
 Classifier: Programming Language :: Python :: 3.6
+Description-Content-Type: text/markdown
