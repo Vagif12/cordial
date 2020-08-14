@@ -62,7 +62,7 @@ class GraphRecommender:
 
     """
     def __init__(self,dataset,feature_names=[],text_feature=None,indexer='title',n_recommendations=10):
-        if not dataset.endswith('.csv'):
+        if not dataset.lower().endswith('.csv'):
             ds = 'https://raw.githubusercontent.com/Vagif12/cordial/master/datasets/{}.csv'.format(dataset)
             dataset = ds
         self.df,self.feature_names = preprocess(pd.read_csv(dataset),feature_names,indexer)
@@ -274,7 +274,7 @@ class BasicRecommender:
         # If feature names is blank, then it get all categorical objects,
         # removes the id and used them to recommend items,setting the indexer
         # as the first element of the feature_names
-        if not dataset.endswith('.csv'):
+        if not dataset.lower().endswith('.csv'):
             ds = 'https://raw.githubusercontent.com/Vagif12/cordial/master/datasets/{}.csv'.format(dataset)
             dataset = ds
 
