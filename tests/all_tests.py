@@ -3,7 +3,7 @@ from cordial.content_recommenders import GraphRecommender, BasicRecommender
 
 class TestQueries(unittest.TestCase):
     """
-    Test recommender system queries
+    Test recommender system queries for Travis CI
     """
 
     def test_graph_recommender(self):
