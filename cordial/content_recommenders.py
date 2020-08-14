@@ -62,8 +62,10 @@ class GraphRecommender:
 
     """
     def __init__(self,dataset,feature_names=[],text_feature=None,indexer='title',n_recommendations=10):
+        if not dataset.endswith('.csv'):
+            ds = 'https://raw.githubusercontent.com/Vagif12/cordial/master/datasets/{}.csv'.format(dataset)
+            dataset = ds
         self.df,self.feature_names = preprocess(pd.read_csv(dataset),feature_names,indexer)
-
         print('|- Preprocessing data... -|')
         # check if txt feature was passed in, if not then automatically detect
         self.text_feature = text_feature
@@ -195,7 +197,7 @@ def matrix_maker(data,indexer='title',feature_names=[]):
     try:
         assert(isinstance(feature_names, list))
     except:
-        print('Error! Feature names must be of type list!')
+        print('|- Error! Feature names must be of type list! -|')
         exit()
 
 
@@ -213,14 +215,14 @@ def matrix_maker(data,indexer='title',feature_names=[]):
     try:
         assert indexer in data.columns
     except:
-        print('Error! the indexer passed named:  ' +  str(indexer) + 'is not in dataset!')
+        print(' |- Error! the indexer passed named:  ' +  str(indexer) + 'is not in dataset! -|')
         exit()
     for f in feature_names:
             data[f] = data[f].apply(clean_data)
-    print('Cleaning Data..')
+    print('|- Cleaning Data.. -|')
 
     data['text'] = data.apply(create_soup,axis=1)
-    print('Getting similarities')
+    print('|- Getting similarities -|')
 
     # Create a CountVectorizer, fit to data 'soup' and get similarities
     con = vector = TfidfVectorizer(max_df=0.4,         
@@ -272,6 +274,10 @@ class BasicRecommender:
         # If feature names is blank, then it get all categorical objects,
         # removes the id and used them to recommend items,setting the indexer
         # as the first element of the feature_names
+        if not dataset.endswith('.csv'):
+            ds = 'https://raw.githubusercontent.com/Vagif12/cordial/master/datasets/{}.csv'.format(dataset)
+            dataset = ds
+
         self.data1 = pd.read_csv(dataset).copy()
 
         if feature_names == []:
@@ -293,7 +299,7 @@ class BasicRecommender:
 
     def _get_message(self, item, recom_items):
         # Get the recommendations and put them into a DataFrame
-        print("Complete! Stored recommendation DataFrame under the 'recommendations' key")
+        print("|- Complete! Stored recommendation DataFrame under the 'recommendations' key! -|")
 
         rec_items = len(recom_items)
         # List for recommended items and their respective correlations
@@ -312,10 +318,10 @@ class BasicRecommender:
 
 
         return {
-            'recommendations': df,
-            'indexer': self.indexer,
+            'result': df,
             'n_recommendations': self.n_recommendations,
-            'feature_names': self.feature_names
+            'indexer': self.indexer,
+            'feature_names': self.feature_names,
         }
 
         
