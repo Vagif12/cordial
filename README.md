@@ -3,6 +3,9 @@ Coridal is an intuitive light-weight API that allows developers to seamlessly us
 In just three lines of a code, one can built a powerful content recommender system. Currently, Coridal only provides content recommenders,
 but collaborative filtering is coming soon!
 
+# Installation
+`pip install cordial`
+
 # Example usage:
 
 ```python
