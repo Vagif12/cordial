@@ -48,7 +48,7 @@ class GraphRecommender:
 
     For a movie dataset with features incliding genre,actors,writers:
 
-    recommender.GraphRecommender(feature_names=['genre','actors','writer','director','country'],text_feature='plot')
+    recommender = GraphRecommender('disney',feature_names=['genre','actors','writer','director','country'],text_feature='plot')
     recommendations = recommender.recommend('Toy Story')['result']
 
     Returns:
