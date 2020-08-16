@@ -11,19 +11,16 @@ but collaborative filtering is coming soon!
 ```python
 
 # An example with Cordial's BasicRecommender
-from cordial.content_recommenders import GraphRecommender,BasicRecommender
+from cordial.content_recommenders import GraphRecommender
 recommender = BasicRecommender('disney')
 print(recommender.recommend('Toy Story')['result'])
 
 # An example with Cordial's GraphRecommender
-from cordial.content_recommenders import GraphRecommender,BasicRecommender
+from cordial.content_recommenders import GraphRecommender
 recommender = GraphRecommender('netflix')
 print(recommender.recommend('Toy Story')['result'])
 
 # It's as simple as pie!
 ```
 
-# Todo:
- 1. Add support for other documents besides CSV
- 2. Add collaborative filtering
- 3. Implement as a REST API
+Full documentation can be viewed [here](https://github.com/Vagif12/cordial/wiki)
