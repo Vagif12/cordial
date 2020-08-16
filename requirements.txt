@@ -4,4 +4,3 @@ scikit-learn
 networkx
 spacy
 gensim
-en_core_web_sm
