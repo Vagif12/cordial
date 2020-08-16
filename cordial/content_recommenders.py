@@ -5,6 +5,13 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.cluster import MiniBatchKMeans
 import networkx as nx
 import math
+import gensim
+from gensim.utils import simple_preprocess
+import gensim.corpora as corpora
+from pprint import pprint
+from gensim.models import CoherenceModel
+import spacy
+import re
 
 
 # Cleaning/ preprocessing function for graph based recommender engine
@@ -39,7 +46,6 @@ class GraphRecommender:
 
     dataset: dataset name
     feature_names: a list of features to be used to generate recommendations
-    search_name: the name of the item you are looking to get recommendations from
     n_recommendations: number of recommendations(default=10)
     indexer: the name of the feature you want to get recommendations from
     text_feature: the feature that describes the item your are trying to recommend(description,plot,overview,etc)
@@ -252,10 +258,8 @@ class BasicRecommender:
 
     dataset: dataset name
     feature_names: a list of features to be used to generate recommendations
-    search_name: the name of the item you are looking to get recommendations from
     n_recommendations: number of recommendations(default=10)
     indexer: the name of the feature you want to get recommendations from
-    text_feature: the feature that describes the item your are trying to recommend(description,plot,overview,etc)
 
     Returns:
     a dictionary with the following keys:
@@ -338,3 +342,175 @@ class BasicRecommender:
         # return each item
 
         return self._get_message(item=item, recom_items=recom_item)
+
+
+################### --- End of Basic Recommender ------- ########################
+
+class LDARecommender:
+    '''
+    ---------- Basic LDA Recommender Class --------
+    This is the base class for LDA Based content recommender.
+
+    Parameters:
+
+    dataset: dataset name
+    feature_names: a list of features to be used to generate recommendations
+    n_recommendations: number of recommendations(default=10)
+    indexer: the name of the feature you want to get recommendations from
+
+    Returns:
+    a dictionary with the following keys:
+
+    result: the generated recommendations
+    n_recommendations: the number of recommendations made
+    indexer: the indexer used
+    feature_names: the feature names used
+
+    Example:
+    from cordial.content_recommenders import LDARecommender
+    recommender.BasicRecommender('disney',feature_names=['genre','actors','writer','plot'],indexer='title')
+    print(recommender.recommend('Coco')['result'])
+    
+    '''
+    def __init__(self,dataset,feature_names=[],indexer='title',n_recommendations=10):
+        self.n_recommendations = n_recommendations
+        if not dataset.lower().endswith('.csv'):
+            ds = 'https://raw.githubusercontent.com/Vagif12/cordial/master/datasets/{}.csv'.format(dataset)
+            self.df = pd.read_csv(ds).copy()
+        else:
+            self.df = pd.read_csv(dataset).copy()
+        try:
+            assert indexer in self.df.columns
+        except:
+            print(' |- Error! the indexer passed named:  ' +  str(indexer) + 'is not in dataset! -|')
+            exit()
+            
+        if feature_names == [] or feature_names == None:
+            # Getting defaults if no feature names were passed
+            options = ['id','_id','rating','_rating','score','_score','rated']
+            feature_names = list(df.select_dtypes('object').columns)
+            for i in options:
+                if i in [x.lower() for x in feature_names]:
+                    del feature_names[feature_names.index(i)]
+
+        self.feature_names,self.indexer = feature_names,indexer
+        for f in self.feature_names:
+                self.df[f] = self.df[f].apply(clean_data)
+        print('|- Cleaning Data.. -|')
+
+        def create_soup(x):
+            soup = []
+            for feature in np.array(feature_names):
+                f = ''.join(x[feature])
+                soup.append(f)
+            return ' '.join(soup)
+
+        self.df['text'] = self.df.apply(create_soup,axis=1)
+        print('|- Getting similarities -|')
+        
+    def recommend(self,s_name):
+        tfidf = TfidfVectorizer(
+        min_df = 5,
+        max_df = 0.95,
+        max_features = 8000,
+        stop_words = 'english'
+        )
+        text = tfidf.fit_transform(self.df['text'])
+        
+        self.df['text'] = self.df['text'].map(lambda x: re.sub("([^\x00-\x7F])+","", x))
+        
+        def sent_to_words(sentences):
+            for sentence in sentences:
+                yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))
+
+        data_words = list(sent_to_words(self.df['text']))
+            
+        bigram = gensim.models.Phrases(data_words, min_count=5, threshold=10) # higher threshold fewer phrases.
+        bigram_mod = gensim.models.phrases.Phraser(bigram)
+
+        def make_bigrams(texts):
+            return [bigram_mod[doc] for doc in texts]
+            
+        def lemmatization(texts, allowed_postags=['NOUN', 'ADJ', 'VERB', 'ADV']):
+            """https://spacy.io/api/annotation"""
+            texts_out = []
+            for sent in texts:
+                doc = nlp(" ".join(sent)) 
+                texts_out.append([token.lemma_ for token in doc if token.pos_ in allowed_postags])
+            return texts_out
+        
+
+        data_words_bigrams = make_bigrams(data_words)
+
+        # Initialize spacy 'en' model, keeping only tagger component (for efficiency)
+        nlp = spacy.load('en_core_web_sm')
+
+        # Do lemmatization keeping only noun, adj, vb, adv
+        data_lemmatized = lemmatization(data_words_bigrams, allowed_postags=['NOUN', 'ADJ', 'VERB'])
+        
+        def Sort_Tuple(tup):  
+            return(sorted(tup, key = lambda x: x[1], reverse = True))
+        
+        id2word = corpora.Dictionary(data_lemmatized)
+
+        # Filter out tokens that appear in only 1 documents and appear in more than 90% of the documents
+        id2word.filter_extremes(no_below=2, no_above=0.9)
+
+        # Create Corpus
+        texts = data_lemmatized
+
+        # Term Document Frequency
+        corpus = [id2word.doc2bow(text) for text in texts]
+
+        
+        lda_model = gensim.models.LdaMulticore(corpus=corpus,
+                                           id2word=id2word,
+                                           num_topics=15, 
+                                           random_state=100,
+                                           chunksize=100,
+                                           passes=10,
+                                           alpha=0.01,
+                                           eta=0.9)
+        
+        doc_num, topic_num, prob = [], [], []
+        for n in range(len(self.df)):
+            get_document_topics = lda_model.get_document_topics(corpus[n])
+            doc_num.append(n)
+            sorted_doc_topics = Sort_Tuple(get_document_topics)
+            topic_num.append(sorted_doc_topics[0][0])
+            prob.append(sorted_doc_topics[0][1])
+        self.df['Doc'] = doc_num
+        self.df['Topic'] = topic_num
+        self.df['Probability'] = prob
+        
+        recommended = []
+        top10_list = []
+
+        title = s_name.lower()
+        self.df[self.indexer] = self.df[self.indexer].str.lower()
+        topic_num = self.df[self.df[self.indexer]==title].Topic.values
+        doc_num = self.df[self.df[self.indexer]==title].Doc.values    
+
+        output_df = self.df[self.df['Topic']==topic_num[0]].sort_values('Probability', ascending=False).reset_index(drop=True)
+
+        index = output_df[output_df['Doc']==doc_num[0]].index[0]
+
+        top10_list += list(output_df.iloc[index-5:index].index)
+        top10_list += list(output_df.iloc[index+1:index+6].index)
+
+        output_df[self.indexer] = output_df[self.indexer].str.title()
+        probas = []
+
+        for each in top10_list:
+            probas.append(output_df.iloc[each].Probability)
+            recommended.append(output_df.iloc[each].title)
+
+        df = pd.DataFrame(recommended)
+        df['Probability'] = probas
+        df.columns = ['Item Name','Probability']
+        return {
+            'result': df,
+            'n_recommendations': self.n_recommendations,
+            'indexer': self.indexer,
+            'feature_names': self.feature_names,
+        }

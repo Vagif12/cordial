@@ -1,5 +1,5 @@
 import unittest
-from cordial.content_recommenders import GraphRecommender, BasicRecommender
+from cordial.content_recommenders import GraphRecommender, BasicRecommender,LDARecommender
 
 class TestQueries(unittest.TestCase):
     """
@@ -13,6 +13,10 @@ class TestQueries(unittest.TestCase):
     def test_basic_recommender(self):
         recommender = BasicRecommender('disney')
         assert 'result' in recommender.recommend('Toy Story')
+
+    def test_basic_recommender(self):
+        recommender = LDARecommender('disney')
+        assert 'result' in recommender.recommend('Toy Story 4')
 
 if __name__ == '__main__':
     unittest.main()
