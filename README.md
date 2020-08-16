@@ -23,8 +23,4 @@ print(recommender.recommend('Toy Story')['result'])
 # It's as simple as pie!
 ```
 
-# Todo:
- 1. Add support for other documents besides CSV
- 2. Add collaborative filtering
- 3. Implement as a REST API
- 4. Deploy model to AWS using ECS or Elastic Beanstalk 
+Full documentation can be viewed [here](https://github.com/Vagif12/cordial/wiki)
