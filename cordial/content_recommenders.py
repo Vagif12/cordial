@@ -388,7 +388,7 @@ class LDARecommender:
         if feature_names == [] or feature_names == None:
             # Getting defaults if no feature names were passed
             options = ['id','_id','rating','_rating','score','_score','rated']
-            feature_names = list(df.select_dtypes('object').columns)
+            feature_names = list(self.df.select_dtypes('object').columns)
             for i in options:
                 if i in [x.lower() for x in feature_names]:
                     del feature_names[feature_names.index(i)]
@@ -424,7 +424,7 @@ class LDARecommender:
                 yield(gensim.utils.simple_preprocess(str(sentence), deacc=True))
 
         data_words = list(sent_to_words(self.df['text']))
-            
+        print('|- Calcuating TFIDF... -|')
         bigram = gensim.models.Phrases(data_words, min_count=5, threshold=10) # higher threshold fewer phrases.
         bigram_mod = gensim.models.phrases.Phraser(bigram)
 
@@ -452,7 +452,7 @@ class LDARecommender:
             return(sorted(tup, key = lambda x: x[1], reverse = True))
         
         id2word = corpora.Dictionary(data_lemmatized)
-
+        print('|- Lemmatizing ... -|')
         # Filter out tokens that appear in only 1 documents and appear in more than 90% of the documents
         id2word.filter_extremes(no_below=2, no_above=0.9)
 
@@ -487,6 +487,7 @@ class LDARecommender:
         top10_list = []
 
         title = s_name.lower()
+        print('|- Getting Recommendations.. -|')
         self.df[self.indexer] = self.df[self.indexer].str.lower()
         topic_num = self.df[self.df[self.indexer]==title].Topic.values
         doc_num = self.df[self.df[self.indexer]==title].Doc.values    
@@ -504,9 +505,10 @@ class LDARecommender:
         for each in top10_list:
             probas.append(output_df.iloc[each].Probability)
             recommended.append(output_df.iloc[each].title)
-
+        print("|- Done! Recommendations can be viewed as a DataFrame under the 'result' key! -|")
         df = pd.DataFrame(recommended)
         df['Probability'] = probas
+
         df.columns = ['Item Name','Probability']
         return {
             'result': df,
