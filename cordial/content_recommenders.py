@@ -497,7 +497,7 @@ class LDARecommender:
         index = output_df[output_df['Doc']==doc_num[0]].index[0]
 
         top10_list += list(output_df.iloc[index-5:index].index)
-        top10_list += list(output_df.iloc[index+1:index+6].index)
+        top10_list += list(output_df.iloc[index+1:].index)
 
         output_df[self.indexer] = output_df[self.indexer].str.title()
         probas = []
@@ -511,7 +511,7 @@ class LDARecommender:
 
         df.columns = ['Item Name','Probability']
         return {
-            'result': df,
+            'result': df.head(self.n_recommendations),
             'n_recommendations': self.n_recommendations,
             'indexer': self.indexer,
             'feature_names': self.feature_names,
