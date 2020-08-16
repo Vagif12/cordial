@@ -289,7 +289,7 @@ class BasicRecommender:
         if feature_names == []:
             catnames = list(self.data1.select_dtypes('object').columns)
             for i in catnames:
-                if 'id' in i.lower() or 'rating' in i.lower():
+                if 'id' in i.lower() or 'rating' in i.lower() or indexer in i:
                     v = catnames.index(i)
                     del catnames[v]
             self.feature_names = catnames[1:]
@@ -387,20 +387,20 @@ class LDARecommender:
             
         if feature_names == [] or feature_names == None:
             # Getting defaults if no feature names were passed
-            options = ['id','_id','rating','_rating','score','_score','rated']
+            options = ['id','_id','rating','_rating','score','_score','rated',indexer]
             feature_names = list(self.df.select_dtypes('object').columns)
             for i in options:
                 if i in [x.lower() for x in feature_names]:
                     del feature_names[feature_names.index(i)]
-
-        self.feature_names,self.indexer = feature_names,indexer
+        self.feature_names = feature_names
+        self.indexer = indexer
         for f in self.feature_names:
                 self.df[f] = self.df[f].apply(clean_data)
         print('|- Cleaning Data.. -|')
 
         def create_soup(x):
             soup = []
-            for feature in np.array(feature_names):
+            for feature in np.array(self.feature_names):
                 f = ''.join(x[feature])
                 soup.append(f)
             return ' '.join(soup)
@@ -409,6 +409,7 @@ class LDARecommender:
         print('|- Getting similarities -|')
         
     def recommend(self,s_name):
+        np.random.seed(100)
         tfidf = TfidfVectorizer(
         min_df = 5,
         max_df = 0.95,
@@ -470,7 +471,7 @@ class LDARecommender:
                                            chunksize=100,
                                            passes=10,
                                            alpha=0.01,
-                                           eta=0.9)
+                                           eta=0.9,iterations=300)
         
         doc_num, topic_num, prob = [], [], []
         for n in range(len(self.df)):
@@ -491,16 +492,15 @@ class LDARecommender:
         self.df[self.indexer] = self.df[self.indexer].str.lower()
         topic_num = self.df[self.df[self.indexer]==title].Topic.values
         doc_num = self.df[self.df[self.indexer]==title].Doc.values    
-
         output_df = self.df[self.df['Topic']==topic_num[0]].sort_values('Probability', ascending=False).reset_index(drop=True)
 
         index = output_df[output_df['Doc']==doc_num[0]].index[0]
 
         top10_list += list(output_df.iloc[index-5:index].index)
         top10_list += list(output_df.iloc[index+1:].index)
-
         output_df[self.indexer] = output_df[self.indexer].str.title()
         probas = []
+
 
         for each in top10_list:
             probas.append(output_df.iloc[each].Probability)
@@ -508,7 +508,6 @@ class LDARecommender:
         print("|- Done! Recommendations can be viewed as a DataFrame under the 'result' key! -|")
         df = pd.DataFrame(recommended)
         df['Probability'] = probas
-
         df.columns = ['Item Name','Probability']
         return {
             'result': df.head(self.n_recommendations),
