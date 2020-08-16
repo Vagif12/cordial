@@ -11,12 +11,12 @@ but collaborative filtering is coming soon!
 ```python
 
 # An example with Cordial's BasicRecommender
-from cordial.content_recommenders import GraphRecommender,BasicRecommender
+from cordial.content_recommenders import GraphRecommender
 recommender = BasicRecommender('disney')
 print(recommender.recommend('Toy Story')['result'])
 
 # An example with Cordial's GraphRecommender
-from cordial.content_recommenders import GraphRecommender,BasicRecommender
+from cordial.content_recommenders import GraphRecommender
 recommender = GraphRecommender('netflix')
 print(recommender.recommend('Toy Story')['result'])
 
@@ -27,3 +27,4 @@ print(recommender.recommend('Toy Story')['result'])
  1. Add support for other documents besides CSV
  2. Add collaborative filtering
  3. Implement as a REST API
+ 4. Deploy model to AWS using ECS or Elastic Beanstalk 
