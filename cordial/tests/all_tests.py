@@ -16,7 +16,7 @@ class TestQueries(unittest.TestCase):
 
     def test_basic_recommender(self):
         recommender = LDARecommender('disney')
-        assert 'result' in recommender.recommend('Toy Story 4')
+        assert 'result' in recommender.recommend('Onward')
 
 if __name__ == '__main__':
     unittest.main()
