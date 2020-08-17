@@ -12,6 +12,7 @@ from pprint import pprint
 from gensim.models import CoherenceModel
 import spacy
 import re
+from nltk.tokenize import RegexpTokenizer
 
 
 # Cleaning/ preprocessing function for graph based recommender engine
@@ -511,6 +512,152 @@ class LDARecommender:
         df.columns = ['Item Name','Probability']
         return {
             'result': df.head(self.n_recommendations),
+            'n_recommendations': self.n_recommendations,
+            'indexer': self.indexer,
+            'feature_names': self.feature_names,
+        }
+
+############################ End of LDA Recommender ##################################
+class LDADistanceRecommender:
+    def __init__(self,dataset,feature_names=[],indexer='title',n_recommendations=10):
+        self.n_recommendations = n_recommendations
+        if not dataset.lower().endswith('.csv'):
+            ds = 'https://raw.githubusercontent.com/Vagif12/cordial/master/datasets/{}.csv'.format(dataset)
+            self.df = pd.read_csv(ds).copy()
+        else:
+            self.df = pd.read_csv(dataset).copy()
+        try:
+            assert indexer in self.df.columns
+        except:
+            print(' |- Error! the indexer passed named:  ' +  str(indexer) + 'is not in dataset! -|')
+            exit()
+            
+        if feature_names == [] or feature_names == None:
+            # Getting defaults if no feature names were passed
+            options = ['id','_id','rating','_rating','score','_score','rated',indexer]
+            feature_names = list(self.df.select_dtypes('object').columns)
+            for i in options:
+                if i in [x.lower() for x in feature_names]:
+                    del feature_names[feature_names.index(i)]
+        self.feature_names = feature_names
+        self.indexer = indexer
+        for f in self.feature_names:
+                self.df[f] = self.df[f].apply(clean_data)
+        print('|- Cleaning Data.. -|')
+
+        def create_soup(x):
+            soup = []
+            for feature in np.array(self.feature_names):
+                f = ''.join(x[feature])
+                soup.append(f)
+            return ' '.join(soup)
+
+        self.df['text'] = self.df.apply(create_soup,axis=1)
+        print('|- Getting similarities -|')
+        
+    def recommend(self,s_title):
+        
+        docs = self.df['text'].copy()
+
+        # Split the documents into tokens.
+        tokenizer = RegexpTokenizer(r'\w+')
+        for idx in range(len(docs)):
+            docs[idx] = docs[idx].lower()  # Convert to lowercase.
+            docs[idx] = tokenizer.tokenize(docs[idx])  # Split into words.
+
+        # Remove words that are only one character.
+        docs = [[token for token in doc if len(token) > 1] for doc in docs]
+        
+        # Compute bigrams.
+        from gensim.models import Phrases
+
+        # Add bigrams and trigrams to docs (only ones that appear 20 times or more).
+        bigram = Phrases(docs, min_count=5, threshold=10)
+        for idx in range(len(docs)):
+            for token in bigram[docs[idx]]:
+                if '_' in token:
+                    # Token is a bigram, add to document.
+                    docs[idx].append(token)
+                    
+        from gensim.corpora import Dictionary
+
+        # Create a dictionary representation of the documents.
+        dictionary = Dictionary(docs)
+
+        # Filter out words that occur less than 20 documents, or more than 50% of the documents.
+        dictionary.filter_extremes(no_below=20, no_above=0.5)
+        
+        corpus = [dictionary.doc2bow(doc) for doc in docs]
+        
+        # Train LDA model.
+        from gensim.models import LdaModel, LdaMulticore
+
+        # Set training parameters.
+        num_topics = 15
+        chunksize = 2000
+        passes = 20
+        iterations = 100
+        eval_every = None  # Don't evaluate model perplexity, takes too much time.
+
+        # Make a index to word dictionary.
+        temp = dictionary[0]  # This is only to "load" the dictionary.
+        id2word = dictionary.id2token
+        
+        from gensim.models import CoherenceModel
+
+        topic_size = [1,5,10,15,20,25,30,35,40]
+        coherence_score = []
+        print('|- Generating Model... -|')
+        lda_model = gensim.models.LdaMulticore(corpus=corpus,
+                                           id2word=id2word,
+                                           num_topics=15, 
+                                           random_state=100,
+                                           chunksize=100,
+                                           passes=10,
+                                           alpha=0.01,
+                                           eta=0.9,iterations=300)
+        
+        for index, row in self.df.iterrows():
+            for i in range(0,num_topics):
+                self.df.at[index,'topic_'+str(i)] = 0
+            for t in lda_model.get_document_topics(corpus[index]):
+                self.df.at[index,'topic_'+str(t[0])] = t[1]
+                
+        # user has watched a title
+        pick = s_title
+
+        pick_row = self.df[self.df[self.indexer].str.lower() == pick.lower()]
+        pick_index = pick_row.index.values[0]
+        print('|- Generating Euclidean Distances... -|')
+        def Euclidean(row, n_topics):
+            pick_vec = []
+            row_vec = []
+            for i in range(0,n_topics):
+                pick_vec.append(pick_row.iloc[0]['topic_'+str(i)])
+                row_vec.append(row['topic_'+str(i)])
+
+            # Get similarity based on top k topics of picked vector
+            k=10
+
+            top_5_idx = np.argsort(pick_vec)[-k:]
+            pick_vec = np.array(pick_vec)[top_5_idx]
+            row_vec = np.array(row_vec)[top_5_idx]
+
+            return np.linalg.norm(row_vec - pick_vec)
+
+        # select nearest 10
+        def getTopNByLDA(df, col, n):
+            return df.sort_values(by = col).head(n)
+        
+        # compute lda distances
+        filteredData = self.df.copy()
+        for index, row in filteredData.iterrows():
+            filteredData.at[index,'lda'] = Euclidean(filteredData.iloc[index], num_topics)
+        print("|- Complete! Stored recommendation DataFrame under the 'recommendations' key! -|")
+        filteredData = filteredData[filteredData.index != pick_index]
+        
+        return {
+            'result': getTopNByLDA(filteredData, 'lda', self.n_recommendations)[[self.indexer,'lda']].sort_values('lda'),
             'n_recommendations': self.n_recommendations,
             'indexer': self.indexer,
             'feature_names': self.feature_names,

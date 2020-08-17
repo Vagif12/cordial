@@ -1,4 +1,4 @@
-from cordial.content_recommenders import LDARecommender
+from cordial.content_recommenders import LDADistanceRecommender
 
-recommender = LDARecommender('disney')
+recommender = LDADistanceRecommender('disney',feature_names=['genre','plot','writer','actors','director'])
 print(recommender.recommend('Toy Story')['result'])
